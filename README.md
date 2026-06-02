@@ -47,3 +47,4 @@ django-admin startproject config .
 
 # Создаем приложение catalog
 python manage.py startapp catalog
+## Pull Request
