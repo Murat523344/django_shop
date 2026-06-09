@@ -1,22 +1,20 @@
 """
-Настройки Django проекта config.
+Django settings for config project.
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
 
-# Базовая директория проекта
+# Загружаем переменные окружения
+load_dotenv()
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Секретный ключ (в реальном проекте нужно хранить в переменных окружения)
-SECRET_KEY = 'django-insecure-8x6^&*#k3@m9!q2w5e7r8t9y0u1i2o3p4a5s6d7f8g9h0j1k2l3'
-
-# Режим отладки (включен для разработки)
-DEBUG = True
-
-# Разрешенные хосты
+SECRET_KEY = os.getenv('SECRET_KEY')
+DEBUG = os.getenv('DEBUG') == 'True'
 ALLOWED_HOSTS = []
 
-# Установленные приложения
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -24,10 +22,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'catalog',  # наше приложение каталога
+    'catalog',
 ]
 
-# Промежуточные слои (middleware)
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -38,15 +35,13 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# Главный файл маршрутизации
 ROOT_URLCONF = 'config.urls'
 
-# Настройки шаблонов
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],  # Путь к папке с шаблонами (пусто, так как APP_DIRS=True)
-        'APP_DIRS': True,  # Django будет искать шаблоны в папке templates каждого приложения
+        'DIRS': [],
+        'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -58,18 +53,20 @@ TEMPLATES = [
     },
 ]
 
-# WSGI приложение
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Настройки базы данных (SQLite для разработки)
+# База данных PostgreSQL
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
 
-# Валидация паролей
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -77,14 +74,15 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Интернационализация (русский язык и московское время)
 LANGUAGE_CODE = 'ru-ru'
 TIME_ZONE = 'Europe/Moscow'
 USE_I18N = True
 USE_TZ = True
 
-# Статические файлы (CSS, JS, изображения)
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
-# Тип поля первичного ключа по умолчанию
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
