@@ -1,35 +1,41 @@
-from django.shortcuts import render, get_object_or_404
-from catalog.models import Product, Category
+from django.views.generic import ListView, DetailView, TemplateView
+from catalog.models import Product
 
 
-def home(request):
-    """Контроллер для главной страницы."""
-    products = Product.objects.all().select_related('category')
+class HomeView(ListView):
+    """Главная страница со списком товаров."""
+    model = Product
+    template_name = 'catalog/home.html'
+    context_object_name = 'products'
     
-    # Обрезаем описание до 100 символов
-    for product in products:
-        if product.description and len(product.description) > 100:
-            product.short_description = product.description[:100] + '...'
-        else:
-            product.short_description = product.description
+    def get_queryset(self):
+        """Получаем все товары с категориями."""
+        return Product.objects.all().select_related('category')
     
-    context = {
-        'products': products,
-        'title': 'Главная страница'
-    }
-    return render(request, 'catalog/home.html', context)
+    def get_context_data(self, **kwargs):
+        """Добавляем обрезанное описание для каждого товара."""
+        context = super().get_context_data(**kwargs)
+        for product in context['products']:
+            if product.description and len(product.description) > 100:
+                product.short_description = product.description[:100] + '...'
+            else:
+                product.short_description = product.description
+        context['title'] = 'Главная страница'
+        return context
 
 
-def product_detail(request, pk):
-    """Контроллер для страницы товара."""
-    product = get_object_or_404(Product, id=pk)
-    context = {
-        'product': product,
-        'title': product.name
-    }
-    return render(request, 'catalog/product_detail.html', context)
+class ProductDetailView(DetailView):
+    """Детальная страница товара."""
+    model = Product
+    template_name = 'catalog/product_detail.html'
+    context_object_name = 'product'
 
 
-def contacts(request):
-    """Контроллер для страницы контактов."""
-    return render(request, 'catalog/contacts.html')
+class ContactsView(TemplateView):
+    """Страница контактов."""
+    template_name = 'catalog/contacts.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Контакты'
+        return context
