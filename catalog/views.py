@@ -1,5 +1,7 @@
-from django.views.generic import ListView, DetailView, TemplateView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.urls import reverse_lazy
 from catalog.models import Product
+from catalog.forms import ProductForm
 
 
 class HomeView(ListView):
@@ -24,11 +26,42 @@ class HomeView(ListView):
         return context
 
 
+class ProductListView(ListView):
+    """Список всех продуктов для администрирования."""
+    model = Product
+    template_name = 'catalog/product_list.html'
+    context_object_name = 'products'
+    ordering = ['-created_at']
+
+
 class ProductDetailView(DetailView):
     """Детальная страница товара."""
     model = Product
     template_name = 'catalog/product_detail.html'
     context_object_name = 'product'
+
+
+class ProductCreateView(CreateView):
+    """Создание нового товара."""
+    model = Product
+    form_class = ProductForm
+    template_name = 'catalog/product_form.html'
+    success_url = reverse_lazy('catalog:product_list')
+
+
+class ProductUpdateView(UpdateView):
+    """Редактирование товара."""
+    model = Product
+    form_class = ProductForm
+    template_name = 'catalog/product_form.html'
+    success_url = reverse_lazy('catalog:product_list')
+
+
+class ProductDeleteView(DeleteView):
+    """Удаление товара."""
+    model = Product
+    template_name = 'catalog/product_confirm_delete.html'
+    success_url = reverse_lazy('catalog:product_list')
 
 
 class ContactsView(TemplateView):
