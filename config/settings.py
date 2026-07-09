@@ -89,3 +89,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Приложение блога
 INSTALLED_APPS += ['blog']
+
+# Настройки пользователей
+AUTH_USER_MODEL = 'users.User'
+
+INSTALLED_APPS += ['users']
+
+# Настройки для отправки писем (для разработки)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
