@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 
 class Category(models.Model):
@@ -67,11 +68,28 @@ class Product(models.Model):
         auto_now=True,
         verbose_name='Дата последнего изменения'
     )
+    is_published = models.BooleanField(
+        default=False,
+        verbose_name='Опубликовано',
+        help_text='Отметьте для публикации продукта'
+    )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='products',
+        verbose_name='Владелец',
+        help_text='Владелец продукта',
+        null=True,
+        blank=True
+    )
     
     class Meta:
         verbose_name = 'Товар'
         verbose_name_plural = 'Товары'
         ordering = ['-created_at']
+        permissions = [
+            ('can_unpublish_product', 'Может отменять публикацию продукта'),
+        ]
     
     def __str__(self):
         return self.name
