@@ -1,0 +1,63 @@
+{% extends 'catalog/base.html' %}
+
+{% block title %}Управление товарами{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">Управление товарами</h1>
+        {% if user.is_authenticated %}
+            <a href="{% url 'catalog:product_create' %}" class="btn btn-primary mb-4">Добавить новый товар</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Название</th>
+                    <th>Категория</th>
+                    <th>Цена</th>
+                    <th>Статус</th>
+                    <th>Владелец</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                    <tr>
+                        <td>{{ product.pk }}</td>
+                        <td>{{ product.name }}</td>
+                        <td>{{ product.category.name }}</td>
+                        <td>{{ product.price }} ₽</td>
+                        <td>
+                            {% if product.is_published %}
+                                <span class="badge bg-success">Опубликован</span>
+                            {% else %}
+                                <span class="badge bg-warning">Не опубликован</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ product.owner.email|default:"Не указан" }}</td>
+                        <td>
+                            <a href="{% url 'catalog:product_detail' product.pk %}" class="btn btn-sm btn-info">Просмотр</a>
+                            {% if user == product.owner or perms.catalog.can_unpublish_product %}
+                                <a href="{% url 'catalog:product_update' product.pk %}" class="btn btn-sm btn-warning">Редактировать</a>
+                            {% endif %}
+                            {% if user == product.owner or perms.catalog.delete_product %}
+                                <a href="{% url 'catalog:product_delete' product.pk %}" class="btn btn-sm btn-danger">Удалить</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center">Товары не найдены</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
