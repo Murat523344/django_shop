@@ -97,3 +97,15 @@ INSTALLED_APPS += ['users']
 
 # Настройки для отправки писем (для разработки)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# Настройки кеширования с Redis
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'TIMEOUT': 300,
+        }
+    }
+}

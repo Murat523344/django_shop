@@ -3,12 +3,16 @@ from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
-from catalog.models import Product
+from django.core.cache import cache
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from catalog.models import Product, Category
 from catalog.forms import ProductForm
+from catalog.services import get_products_by_category
 
 
 class HomeView(ListView):
-    """Главная страница со списком товаров (доступна всем)."""
+    """Главная страница со списком товаров."""
     model = Product
     template_name = 'catalog/home.html'
     context_object_name = 'products'
@@ -24,6 +28,7 @@ class HomeView(ListView):
             else:
                 product.short_description = product.description
         context['title'] = 'Главная страница'
+        context['categories'] = Category.objects.all()
         return context
 
 
@@ -35,15 +40,16 @@ class ProductListView(ListView):
     ordering = ['-created_at']
 
 
+@method_decorator(cache_page(60 * 15), name='dispatch')
 class ProductDetailView(DetailView):
-    """Детальная страница товара (доступна всем)."""
+    """Детальная страница товара с кешированием."""
     model = Product
     template_name = 'catalog/product_detail.html'
     context_object_name = 'product'
 
 
 class ProductCreateView(LoginRequiredMixin, CreateView):
-    """Создание нового товара (только для авторизованных)."""
+    """Создание нового товара."""
     model = Product
     form_class = ProductForm
     template_name = 'catalog/product_form.html'
@@ -51,13 +57,12 @@ class ProductCreateView(LoginRequiredMixin, CreateView):
     login_url = '/users/login/'
     
     def form_valid(self, form):
-        """Автоматически назначаем владельца."""
         form.instance.owner = self.request.user
         return super().form_valid(form)
 
 
 class ProductUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    """Редактирование товара (только владелец или модератор)."""
+    """Редактирование товара."""
     model = Product
     form_class = ProductForm
     template_name = 'catalog/product_form.html'
@@ -65,40 +70,52 @@ class ProductUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     login_url = '/users/login/'
     
     def test_func(self):
-        """Проверка прав на редактирование."""
         product = self.get_object()
         user = self.request.user
-        # Владелец или модератор может редактировать
         return user == product.owner or user.has_perm('catalog.can_unpublish_product')
     
     def handle_no_permission(self):
-        """Обработка отсутствия прав."""
         messages.error(self.request, 'У вас нет прав для редактирования этого продукта.')
         return redirect('catalog:product_list')
 
 
 class ProductDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-    """Удаление товара (только владелец или модератор)."""
+    """Удаление товара."""
     model = Product
     template_name = 'catalog/product_confirm_delete.html'
     success_url = reverse_lazy('catalog:product_list')
     login_url = '/users/login/'
     
     def test_func(self):
-        """Проверка прав на удаление."""
         product = self.get_object()
         user = self.request.user
-        # Владелец или модератор может удалить
         return user == product.owner or user.has_perm('catalog.delete_product')
     
     def handle_no_permission(self):
-        """Обработка отсутствия прав."""
         messages.error(self.request, 'У вас нет прав для удаления этого продукта.')
         return redirect('catalog:product_list')
 
 
+class CategoryProductsView(ListView):
+    """Список продуктов в категории с кешированием."""
+    template_name = 'catalog/category_products.html'
+    context_object_name = 'products'
+    
+    def get_queryset(self):
+        category_id = self.kwargs.get('category_id')
+        return get_products_by_category(category_id)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        category_id = self.kwargs.get('category_id')
+        category = get_object_or_404(Category, id=category_id)
+        context['category'] = category
+        context['title'] = f'Товары категории: {category.name}'
+        return context
+
+
 class ContactsView(TemplateView):
-    """Страница контактов (доступна всем)."""
+    """Страница контактов."""
     template_name = 'catalog/contacts.html'
     
     def get_context_data(self, **kwargs):
